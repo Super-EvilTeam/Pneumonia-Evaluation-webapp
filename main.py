@@ -49,17 +49,7 @@ def login():
             # Account doesnt exist or username/password incorrect
             msg = 'Incorrect username/password!'
     # Show the login form with message (if any)
-    return render_template('index.html', msg=msg)
-
-# http://localhost:5000/python/logout - this will be the logout page
-@app.route('/pythonlogin/logout')
-def logout():
-    # Remove session data, this will log the user out
-   session.pop('loggedin', None)
-   session.pop('id', None)
-   session.pop('username', None)
-   # Redirect to login page
-   return redirect(url_for('login'))
+    return render_template('login.html', msg=msg)
 
 # http://localhost:5000/pythinlogin/register - this will be the registration page, we need to use both GET and POST requests
 @app.route('/pythonlogin/register', methods=['GET', 'POST'])
@@ -97,20 +87,6 @@ def register():
     return render_template('register.html', msg=msg)
 
 
-# http://localhost:5000/pythinlogin/profile - this will be the profile page, only accessible for loggedin users
-@app.route('/pythonlogin/profile')
-def profile():
-    # Check if user is loggedin
-    if 'loggedin' in session:
-        # We need all the account info for the user so we can display it on the profile page
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
-        account = cursor.fetchone()
-        # Show the profile page with account info
-        return render_template('profile.html', account=account)
-    # User is not loggedin redirect to login page
-    return redirect(url_for('login'))
-
 @app.route('/pythonlogin/home', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
@@ -119,7 +95,7 @@ def home():
     return render_template('home.html')
 
 
-@app.route("/show", methods=['GET', 'POST'])
+@app.route("/Result", methods=['GET', 'POST'])
 def result():
     if request.method == 'POST':
         # Upload file flask
@@ -133,7 +109,7 @@ def result():
         # Retrieving uploaded file path from session
         img_file_path = session.get('uploaded_img_file_path', None)
         # Display image in Flask application web page
-        return render_template('show.html', user_image = img_file_path)
+        return render_template('Result.html', user_image = img_file_path)
 
-
-app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
