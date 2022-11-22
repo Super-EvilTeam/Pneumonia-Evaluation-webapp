@@ -2,9 +2,21 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.utils import secure_filename
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
+import cv2
+import tensorflow as tf
 import re
 import os
 
+
+model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')
+CATEGORIES = ['Affected','Normal']
+def prepare(filepath):
+    IMG_SIZE = 224
+    img_array =cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+    new_array=cv2.resize(img_array, (IMG_SIZE,IMG_SIZE))
+    return new_array.reshape(-1, IMG_SIZE,IMG_SIZE,1)
+
+    
 UPLOAD_FOLDER = os.path.join('staticFiles', 'uploads')
 ALLOWED_EXTENSIONS = {'webp', 'png', 'jpg', 'jpeg', 'gif'}
 app = Flask(__name__, template_folder='templateFiles', static_folder='staticFiles')
@@ -109,7 +121,9 @@ def result():
         # Retrieving uploaded file path from session
         img_file_path = session.get('uploaded_img_file_path', None)
         # Display image in Flask application web page
-        return render_template('Result.html', user_image = img_file_path)
+        prediction = model.predict([prepare(img_file_path)])
+        msg = CATEGORIES[int(prediction[0][0])]
+        return render_template('Result.html', user_image = img_file_path,msg = msg)
 
 if __name__ == "__main__":
     app.run(debug=True)
