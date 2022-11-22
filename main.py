@@ -1,12 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+from werkzeug.utils import secure_filename
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
-import base64
-import cv2
 import os
 
-app = Flask(__name__)
+UPLOAD_FOLDER = os.path.join('staticFiles', 'uploads')
+ALLOWED_EXTENSIONS = {'webp', 'png', 'jpg', 'jpeg', 'gif'}
+app = Flask(__name__, template_folder='templateFiles', static_folder='staticFiles')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Change this to your secret key (can be anything, it's for extra protection)
 app.secret_key = '2c20aa641c0c82029850dec9c8213d46807f6e8e6d9a9ee90e7516a2345ee055'
@@ -117,14 +119,21 @@ def home():
     return render_template('home.html')
 
 
-@app.route("/pythonlogin/result", methods=['GET', 'POST'])
+@app.route("/show", methods=['GET', 'POST'])
 def result():
-    image = request.form.get('image')
-    print(image)
-    # cv2.imshow('image', image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows() 
-    return render_template("result.html", image=image)
+    if request.method == 'POST':
+        # Upload file flask
+        uploaded_img = request.files['uploaded-file']
+        # Extracting uploaded data file name
+        img_filename = secure_filename(uploaded_img.filename)
+        # Upload file to database (defined uploaded folder in static path)
+        uploaded_img.save(os.path.join(app.config['UPLOAD_FOLDER'], img_filename))
+        # Storing uploaded file path in flask session
+        session['uploaded_img_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'], img_filename)
+        # Retrieving uploaded file path from session
+        img_file_path = session.get('uploaded_img_file_path', None)
+        # Display image in Flask application web page
+        return render_template('show.html', user_image = img_file_path)
 
 
 app.run(debug=True)
