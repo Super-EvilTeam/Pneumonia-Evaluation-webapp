@@ -6,7 +6,7 @@ import re
 app = Flask(__name__)
 
 # Change this to your secret key (can be anything, it's for extra protection)
-app.secret_key = 'your secret key'
+app.secret_key = '2c20aa641c0c82029850dec9c8213d46807f6e8e6d9a9ee90e7516a2345ee055'
 
 # Enter your database connection details below
 app.config['MYSQL_HOST'] = 'localhost'
@@ -18,7 +18,7 @@ app.config['MYSQL_DB'] = 'pythonlogin'
 mysql = MySQL(app)
 
 # http://localhost:5000/pythonlogin/ - the following will be our login page, which will use both GET and POST requests
-@app.route('/pythonlogin/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def login():
     # Output message if something goes wrong...
     msg = ''
@@ -92,7 +92,7 @@ def register():
     return render_template('register.html', msg=msg)
 
 # http://localhost:5000/pythinlogin/home - this will be the home page, only accessible for loggedin users
-@app.route('/pythonlogin/home')
+@app.route('/pythonlogin/home' , methods=['GET', 'POST'])
 def home():
     # Check if user is loggedin
     if 'loggedin' in session:
