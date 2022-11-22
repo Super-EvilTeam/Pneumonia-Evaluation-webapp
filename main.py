@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
 import base64
 import cv2
+import os
 
 app = Flask(__name__)
 
@@ -112,16 +113,18 @@ def profile():
 def home():
     if request.method == 'POST':
         image = request.files['image']  # get file
-        image_b64 = base64.b64encode((image.read()).decode('utf-8'))
-        print(image_b64)
-        return redirect(url_for('result', image_b64=image_b64))
+        return redirect(url_for('result', image=image))
     return render_template('home.html')
+
 
 @app.route("/pythonlogin/result", methods=['GET', 'POST'])
 def result():
-    image_b64 = request.form.get('image_b64')
-
-    return render_template("result.html", image_b64=image_b64)
+    image = request.form.get('image')
+    print(image)
+    # cv2.imshow('image', image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows() 
+    return render_template("result.html", image=image)
 
 
 app.run(debug=True)
