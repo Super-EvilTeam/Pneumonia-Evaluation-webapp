@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
+import base64
+import cv2
 
 app = Flask(__name__)
 
@@ -91,15 +93,6 @@ def register():
     # Show registration form with message (if any)
     return render_template('register.html', msg=msg)
 
-# http://localhost:5000/pythinlogin/home - this will be the home page, only accessible for loggedin users
-@app.route('/pythonlogin/home' , methods=['GET', 'POST'])
-def home():
-    # Check if user is loggedin
-    if 'loggedin' in session:
-        # User is loggedin show them the home page
-        return render_template('home.html', username=session['username'])
-    # User is not loggedin redirect to login page
-    return redirect(url_for('login'))
 
 # http://localhost:5000/pythinlogin/profile - this will be the profile page, only accessible for loggedin users
 @app.route('/pythonlogin/profile')
@@ -114,5 +107,21 @@ def profile():
         return render_template('profile.html', account=account)
     # User is not loggedin redirect to login page
     return redirect(url_for('login'))
+
+@app.route('/pythonlogin/home', methods=['GET', 'POST'])
+def home():
+    if request.method == 'POST':
+        image = request.files['image']  # get file
+        image_b64 = base64.b64encode((image.read()).decode('utf-8'))
+        print(image_b64)
+        return redirect(url_for('result', image_b64=image_b64))
+    return render_template('home.html')
+
+@app.route("/pythonlogin/result", methods=['GET', 'POST'])
+def result():
+    image_b64 = request.form.get('image_b64')
+
+    return render_template("result.html", image_b64=image_b64)
+
 
 app.run(debug=True)
