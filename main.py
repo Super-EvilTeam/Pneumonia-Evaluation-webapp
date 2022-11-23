@@ -26,6 +26,37 @@ class login_user:
             session['loggedin'] = True
             session['id'] = self.account['id']
             session['username'] = self.account['username']
+            
+class Register:
+    def __init__(self,username,password,email):
+        self.username = username
+        self.password = password
+        self.email = email
+        
+    def check_ExistingUser(self):
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts WHERE username = %s', (self.username,))
+        self.account = cursor.fetchone()
+        if self.account != None:
+            return True
+        return False
+    
+    def validate_Info(self):
+        msg = ''
+        if not re.match(r'[^@]+@[^@]+\.[^@]+', self.email):
+            msg = 'Invalid email address!'
+        elif not re.match(r'[A-Za-z0-9]+', self.username):
+            msg = 'Username must contain only characters and numbers!'
+        elif not self.username or not self.password or not self.email:
+            msg = 'Please fill out the form!'
+        else:
+            msg = 'Valid'
+        return msg
+    
+    def check_Emptyform(self):
+        if request.method == 'POST':
+            return True
+        return False
 
 #model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')
 CATEGORIES = ['Affected','Normal']
@@ -97,40 +128,71 @@ def login():
     return render_template('login.html', msg=msg)
 
 
-# http://localhost:5000/pythinlogin/register - this will be the registration page, we need to use both GET and POST requests
+# # http://localhost:5000/pythinlogin/register - this will be the registration page, we need to use both GET and POST requests
+# @app.route('/pythonlogin/register', methods=['GET', 'POST'])
+# def register():
+#     # Output message if something goes wrong...
+#     msg = ''
+#     # Check if "username", "password" and "email" POST requests exist (user submitted form)
+#     if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
+#         # Create variables for easy access
+#         username = request.form['username']
+#         password = request.form['password']
+#         email = request.form['email']
+#         # Check if account exists using MySQL
+#         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+#         cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
+#         account = cursor.fetchone()
+#         # If account exists show error and validation checks
+#         if account:
+#             msg = 'Account already exists!'
+#         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+#             msg = 'Invalid email address!'
+#         elif not re.match(r'[A-Za-z0-9]+', username):
+#             msg = 'Username must contain only characters and numbers!'
+#         elif not username or not password or not email:
+#             msg = 'Please fill out the form!'
+#         else:
+#             # Account doesnt exists and the form data is valid, now insert new account into accounts table
+#             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
+#             mysql.connection.commit()
+#             msg = 'You have successfully registered!'
+#     elif request.method == 'POST':
+#         # Form is empty... (no POST data)
+#         msg = 'Please fill out the form!'
+#     # Show registration form with message (if any)
+#     return render_template('register.html', msg=msg)
+
 @app.route('/pythonlogin/register', methods=['GET', 'POST'])
 def register():
-    # Output message if something goes wrong...
-    msg = ''
-    # Check if "username", "password" and "email" POST requests exist (user submitted form)
+    msg =''
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
-        # Create variables for easy access
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
-                # Check if account exists using MySQL
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
-        account = cursor.fetchone()
-        # If account exists show error and validation checks
-        if account:
+        Register_user = Register(username,password,email)
+        validity= Register_user.validate_Info()
+        if Register_user.check_ExistingUser():
             msg = 'Account already exists!'
-        elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-            msg = 'Invalid email address!'
-        elif not re.match(r'[A-Za-z0-9]+', username):
-            msg = 'Username must contain only characters and numbers!'
-        elif not username or not password or not email:
-            msg = 'Please fill out the form!'
-        else:
-            # Account doesnt exists and the form data is valid, now insert new account into accounts table
+        elif validity == 'Valid':
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
             mysql.connection.commit()
             msg = 'You have successfully registered!'
-    elif request.method == 'POST':
-        # Form is empty... (no POST data)
-        msg = 'Please fill out the form!'
-    # Show registration form with message (if any)
+        elif validity != 'Valid':
+            msg = validity
+        elif Register_user.check_Emptyform():
+            msg = 'Please fill out the form!'
     return render_template('register.html', msg=msg)
+        
+
+
+
+
+
+
+
+
 
 
 @app.route('/pythonlogin/home', methods=['GET', 'POST'])
