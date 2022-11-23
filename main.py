@@ -28,9 +28,10 @@ class login_user:
             session['username'] = self.account['username']
             
 class Register:
-    def __init__(self,username,password,email):
+    def __init__(self,username,password,confirm_password,email):
         self.username = username
         self.password = password
+        self.confirm_password = confirm_password
         self.email = email
         
     def check_ExistingUser(self):
@@ -49,6 +50,8 @@ class Register:
             msg = 'Username must contain only characters and numbers!'
         elif not self.username or not self.password or not self.email:
             msg = 'Please fill out the form!'
+        elif self.password != self.confirm_password:
+            msg = 'Passwords do not match'
         else:
             msg = 'Valid'
         return msg
@@ -166,11 +169,12 @@ def login():
 @app.route('/pythonlogin/register', methods=['GET', 'POST'])
 def register():
     msg =''
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'confirm_password' in request.form and 'email' in request.form:
         username = request.form['username']
         password = request.form['password']
+        confirm_password = request.form['confirm_password']
         email = request.form['email']
-        Register_user = Register(username,password,email)
+        Register_user = Register(username,password,confirm_password,email)
         validity= Register_user.validate_Info()
         if Register_user.check_ExistingUser():
             msg = 'Account already exists!'
@@ -185,16 +189,6 @@ def register():
             msg = 'Please fill out the form!'
     return render_template('register.html', msg=msg)
         
-
-
-
-
-
-
-
-
-
-
 @app.route('/pythonlogin/home', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
