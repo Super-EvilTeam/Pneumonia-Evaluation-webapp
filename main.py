@@ -58,7 +58,7 @@ class Register:
             return True
         return False
 
-#model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')
+model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')
 CATEGORIES = ['Affected','Normal']
 def prepare(filepath):
     IMG_SIZE = 224
