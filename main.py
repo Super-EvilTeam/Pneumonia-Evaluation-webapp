@@ -130,8 +130,18 @@ def login():
             msg = 'Incorrect username/password!'
     return render_template('login.html', msg=msg)
 
+# http://localhost:5000/python/logout - this will be the logout page
+@app.route('/pythonlogin/logout')
+def logout():
+    # Remove session data, this will log the user out
+   session.pop('loggedin', None)
+   session.pop('id', None)
+   session.pop('username', None)
+   # Redirect to login page
+   return redirect(url_for('login'))
 
-# # http://localhost:5000/pythinlogin/register - this will be the registration page, we need to use both GET and POST requests
+
+# # http://localhost:5000/pythonlogin/register - this will be the registration page, we need to use both GET and POST requests
 # @app.route('/pythonlogin/register', methods=['GET', 'POST'])
 # def register():
 #     # Output message if something goes wrong...
@@ -191,11 +201,30 @@ def register():
         
 @app.route('/pythonlogin/home', methods=['GET', 'POST'])
 def home():
-    if request.method == 'POST':
-        image = request.files['image']  # get file
-        return redirect(url_for('result', image=image))
-    return render_template('home.html')
+    if 'loggedin' in session:
+        # User is loggedin show them the home page
+        return render_template('home.html', username=session['username'])
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
 
+    # if request.method == 'POST':
+    #     image = request.files['image']  # get file
+    #     return redirect(url_for('result', image=image))
+    # return render_template('home.html')
+
+# http://localhost:5000/pythinlogin/profile - this will be the profile page, only accessible for loggedin users
+@app.route('/pythonlogin/profile')
+def profile():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        # We need all the account info for the user so we can display it on the profile page
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        account = cursor.fetchone()
+        # Show the profile page with account info
+        return render_template('profile.html', account=account)
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
 
 @app.route("/Result", methods=['GET', 'POST'])
 def result():
