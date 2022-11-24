@@ -1,6 +1,6 @@
 # Pneumonia-Evaluation-webapp
 
-Webapp interface to Evaluate chest x-ray image for pneumonia using Trained CNN model
+Webapp interface to Evaluate chest x-ray image for pneumonia using Trained CNN model.
 
 # Demonstration-:
 https://user-images.githubusercontent.com/99067991/203352471-35cfa2f1-7f26-4922-8a65-7566bd81bc83.mp4
@@ -15,7 +15,31 @@ https://user-images.githubusercontent.com/99067991/203352471-35cfa2f1-7f26-4922-
     `model = tf.keras.models.load_model('path here')`
   
 5) Download and install [MySQL](https://dev.mysql.com/downloads/installer/), you can Refer to [this](https://www.javatpoint.com/how-to-install-mysql) guide if you dont know what options to choose during installation.
-6) 
+6) Open MySQL Workbench login to localhost and run following command in Query tab.
+
+        CREATE DATABASE IF NOT EXISTS `pythonlogin` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+        USE `pythonlogin`;
+
+        CREATE TABLE IF NOT EXISTS `accounts` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `username` varchar(50) NOT NULL,
+            `password` varchar(255) NOT NULL,
+            `email` varchar(100) NOT NULL,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+        INSERT INTO `accounts` (`id`, `username`, `password`, `email`) VALUES (1, 'test', 'test', 'test@test.com');
+        
+7) Put your MySQl database password in app.config(main.py).
+
+        # Enter your database connection details below
+        app.config['MYSQL_HOST'] = 'localhost'
+        app.config['MYSQL_USER'] = 'root'
+        app.config['MYSQL_PASSWORD'] = 'Your password here'
+        app.config['MYSQL_DB'] = 'pythonlogin'
+ 
+8) Run main.py
+
 
 
 # References
