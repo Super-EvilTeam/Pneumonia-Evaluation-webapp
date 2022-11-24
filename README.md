@@ -1,6 +1,6 @@
 # Pneumonia-Evaluation-webapp
 
-Webapp interface to Evaluate chest x-ray image for pneumonia using Trained CNN model.
+Webapp interface to Evaluate chest x-ray image for pneumonia using [Trained CNN model](https://github.com/Super-EvilTeam/Pneumonia-Detection-using-CNN).
 
 # Demonstration-:
 https://user-images.githubusercontent.com/99067991/203352471-35cfa2f1-7f26-4922-8a65-7566bd81bc83.mp4
