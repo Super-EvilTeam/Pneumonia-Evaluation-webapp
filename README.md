@@ -14,7 +14,8 @@ https://user-images.githubusercontent.com/99067991/203352471-35cfa2f1-7f26-4922-
 
     `model = tf.keras.models.load_model('path here')`
   
-5) Run main.py
+5) Download and install [MySQL](https://dev.mysql.com/downloads/installer/), you can Refer to [this](https://www.javatpoint.com/how-to-install-mysql) guide if you dont know what options to choose during installation.
+6) 
 
 
 # References
