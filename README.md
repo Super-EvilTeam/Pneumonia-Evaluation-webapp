@@ -13,6 +13,8 @@ https://user-images.githubusercontent.com/99067991/203352471-35cfa2f1-7f26-4922-
 4) Give path to the p1.h5 file in following codeline (main.py)
 
     `model = tf.keras.models.load_model('path here')`
+  
+5) Run main.py
 
 
 # References
