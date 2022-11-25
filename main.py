@@ -97,48 +97,37 @@ class Result():
     def __init__(self):
         pass
     
+    def prepare(self,filepath):
+        IMG_SIZE = 224
+        img_array =cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+        new_array=cv2.resize(img_array, (IMG_SIZE,IMG_SIZE))
+        return new_array.reshape(-1, IMG_SIZE,IMG_SIZE,1)
+
     def show_Result(self):
-         # Upload file flask
-        uploaded_img = request.files['uploaded-file']
-        # Extracting uploaded data file name
-        img_filename = secure_filename(uploaded_img.filename)
-        # Upload file to database (defined uploaded folder in static path)
-        uploaded_img.save(os.path.join(app.config['UPLOAD_FOLDER'], img_filename))
-        # Storing uploaded file path in flask session
-        session['uploaded_img_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'], img_filename)
-        # Retrieving uploaded file path from session
-        img_file_path = session.get('uploaded_img_file_path', None)
-        # Display image in Flask application web page
-        prediction = model.predict([prepare(img_file_path)])
+        uploaded_img = request.files['uploaded-file']# Upload file flask
+        img_filename = secure_filename(uploaded_img.filename)# Extracting uploaded data file name
+        uploaded_img.save(os.path.join(app.config['UPLOAD_FOLDER'], img_filename))# Upload file to database (defined uploaded folder in static path)
+        session['uploaded_img_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'], img_filename)# Storing uploaded file path in flask session
+        img_file_path = session.get('uploaded_img_file_path', None)# Retrieving uploaded file path from session
+        prediction = model.predict([self.prepare(img_file_path)])
+        CATEGORIES = ['Affected','Normal']
         msg = CATEGORIES[int(prediction[0][0])]
         return img_file_path,msg
     
-model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')
-CATEGORIES = ['Affected','Normal']
-def prepare(filepath):
-    IMG_SIZE = 224
-    img_array =cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
-    new_array=cv2.resize(img_array, (IMG_SIZE,IMG_SIZE))
-    return new_array.reshape(-1, IMG_SIZE,IMG_SIZE,1)
-
-    
-UPLOAD_FOLDER = os.path.join('staticFiles', 'uploads')
-ALLOWED_EXTENSIONS = {'webp', 'png', 'jpg', 'jpeg', 'gif'}
 app = Flask(__name__, template_folder='templateFiles', static_folder='staticFiles')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Change this to your secret key (can be anything, it's for extra protection)
 app.secret_key = '2c20aa641c0c82029850dec9c8213d46807f6e8e6d9a9ee90e7516a2345ee055'
-
-# Enter your database connection details below
+app.config['UPLOAD_FOLDER'] = os.path.join('staticFiles', 'uploads')
+#database connection details below
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'root'
 app.config['MYSQL_DB'] = 'pythonlogin'
 
-# Intialize MySQL
-mysql = MySQL(app)
-     
+
+mysql = MySQL(app)# Intialize MySQL
+model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')# Load model
+
+#http://localhost:5000/ - this will be login page, which will use both GET and POST requests
 @app.route('/', methods=['GET', 'POST'])
 def login():
     msg = ''
@@ -151,12 +140,14 @@ def login():
             msg = 'Incorrect username/password!'
     return render_template('login.html', msg=msg)
 
+# http://localhost:5000/pythonlogin/logout - this will be the logout page
 @app.route('/pythonlogin/logout')
 def logout():
      logout_user = Logout()
      logout_user.end_Session()
      return redirect(url_for('login'))
 
+# http://localhost:5000/pythonlogin/register - this will be the registration page, we need to use both GET and POST requests
 @app.route('/pythonlogin/register', methods=['GET', 'POST'])
 def register():
     msg =''
@@ -173,7 +164,8 @@ def register():
         elif Register_user.check_Emptyform():
             msg = 'Please fill out the form!'
     return render_template('register.html', msg=msg)
-        
+
+# http://localhost:5000/pythonlogin/home - this will be the home page, only accessible for loggedin users        
 @app.route('/pythonlogin/home', methods=['GET', 'POST'])
 def home():
     home_page = Home()
@@ -181,7 +173,7 @@ def home():
         return render_template('home.html', username=session['username'])
     return redirect(url_for('login'))
 
-# http://localhost:5000/pythinlogin/profile - this will be the profile page, only accessible for loggedin users
+# http://localhost:5000/pythonlogin/profile - this will be the profile page, only accessible for loggedin users
 @app.route('/pythonlogin/profile')
 def profile():
     user_profile = Profile()
