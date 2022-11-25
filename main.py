@@ -8,7 +8,7 @@ import re
 import os
 
 
-class login_user:
+class Login:
     def __init__(self,username,password):
         self.username = username
         self.password = password
@@ -35,9 +35,9 @@ class Register:
         self.email = email
         
     def check_ExistingUser(self):
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE username = %s', (self.username,))
-        self.account = cursor.fetchone()
+        self.cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        self.cursor.execute('SELECT * FROM accounts WHERE username = %s', (self.username,))
+        self.account = self.cursor.fetchone()
         if self.account != None:
             return True
         return False
@@ -60,160 +60,134 @@ class Register:
         if request.method == 'POST':
             return True
         return False
-
-model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')
-CATEGORIES = ['Affected','Normal']
-def prepare(filepath):
-    IMG_SIZE = 224
-    img_array =cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
-    new_array=cv2.resize(img_array, (IMG_SIZE,IMG_SIZE))
-    return new_array.reshape(-1, IMG_SIZE,IMG_SIZE,1)
-
     
-UPLOAD_FOLDER = os.path.join('staticFiles', 'uploads')
-ALLOWED_EXTENSIONS = {'webp', 'png', 'jpg', 'jpeg', 'gif'}
+    def add_User(self):
+        self.cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (self.username, self.password, self.email,))
+        mysql.connection.commit()
+
+class Logout:
+    def __init__(self):
+        pass
+    
+    def end_Session(self):
+        session.pop('loggedin', None)
+        session.pop('id', None)
+        session.pop('username', None)
+
+class Home:
+    def __intit__(self):
+        pass
+    
+    def active_Session(self):
+        if 'loggedin' in session:
+            return True
+        return False
+
+class Profile(Login):
+    def __init__(self):
+        pass
+    
+    def user_Info(self):
+        self.cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        self.cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        account = self.cursor.fetchone()
+        return account
+    
+class Result():
+    def __init__(self):
+        pass
+    
+    def prepare(self,filepath):
+        IMG_SIZE = 224
+        img_array =cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+        new_array=cv2.resize(img_array, (IMG_SIZE,IMG_SIZE))
+        return new_array.reshape(-1, IMG_SIZE,IMG_SIZE,1)
+
+    def show_Result(self):
+        uploaded_img = request.files['uploaded-file']# Upload file flask
+        img_filename = secure_filename(uploaded_img.filename)# Extracting uploaded data file name
+        uploaded_img.save(os.path.join(app.config['UPLOAD_FOLDER'], img_filename))# Upload file to database (defined uploaded folder in static path)
+        session['uploaded_img_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'], img_filename)# Storing uploaded file path in flask session
+        img_file_path = session.get('uploaded_img_file_path', None)# Retrieving uploaded file path from session
+        prediction = model.predict([self.prepare(img_file_path)])
+        CATEGORIES = ['Affected','Normal']
+        msg = CATEGORIES[int(prediction[0][0])]
+        return img_file_path,msg
+    
 app = Flask(__name__, template_folder='templateFiles', static_folder='staticFiles')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Change this to your secret key (can be anything, it's for extra protection)
 app.secret_key = '2c20aa641c0c82029850dec9c8213d46807f6e8e6d9a9ee90e7516a2345ee055'
-
-# Enter your database connection details below
+app.config['UPLOAD_FOLDER'] = os.path.join('staticFiles', 'uploads')
+#database connection details below
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'root'
 app.config['MYSQL_DB'] = 'pythonlogin'
 
-# Intialize MySQL
-mysql = MySQL(app)
 
-# # http://localhost:5000/pythonlogin/ - the following will be our login page, which will use both GET and POST requests
-# @app.route('/', methods=['GET', 'POST'])
-# def login():
-#     # Output message if something goes wrong...
-#     msg = ''
-#     # Check if "username" and "password" POST requests exist (user submitted form)
-#     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-#         # Create variables for easy access
-#         username = request.form['username']
-#         password = request.form['password']
-#         # Check if account exists using MySQL
-#         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-#         cursor.execute('SELECT * FROM accounts WHERE username = %s AND password = %s', (username, password,))
-#         # Fetch one record and return result
-#         account = cursor.fetchone()
-#         # If account exists in accounts table in out database
-#         if account:
-#             # Create session data, we can access this data in other routes
-#             session['loggedin'] = True
-#             session['id'] = account['id']
-#             session['username'] = account['username']
-#             # Redirect to home page
-#             return redirect(url_for('home'))
-#         else:
-#             # Account doesnt exist or username/password incorrect
-#             msg = 'Incorrect username/password!'
-#     # Show the login form with message (if any)
-#     return render_template('login.html', msg=msg)
-        
+mysql = MySQL(app)# Intialize MySQL
+model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')# Load model
+
+#http://localhost:5000/ - this will be login page, which will use both GET and POST requests
 @app.route('/', methods=['GET', 'POST'])
 def login():
     msg = ''
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-        username = request.form['username']
-        password = request.form['password']
-        login_instance = login_user(username,password)
-        if login_instance.account_Exist():
-            login_instance.create_session()
+        login_user = Login(request.form['username'],request.form['password'])
+        if login_user.account_Exist():
+            login_user.create_session()
             return redirect(url_for('home'))
         else:
             msg = 'Incorrect username/password!'
     return render_template('login.html', msg=msg)
 
+# http://localhost:5000/pythonlogin/logout - this will be the logout page
+@app.route('/pythonlogin/logout')
+def logout():
+     logout_user = Logout()
+     logout_user.end_Session()
+     return redirect(url_for('login'))
 
-# # http://localhost:5000/pythinlogin/register - this will be the registration page, we need to use both GET and POST requests
-# @app.route('/pythonlogin/register', methods=['GET', 'POST'])
-# def register():
-#     # Output message if something goes wrong...
-#     msg = ''
-#     # Check if "username", "password" and "email" POST requests exist (user submitted form)
-#     if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
-#         # Create variables for easy access
-#         username = request.form['username']
-#         password = request.form['password']
-#         email = request.form['email']
-#         # Check if account exists using MySQL
-#         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-#         cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
-#         account = cursor.fetchone()
-#         # If account exists show error and validation checks
-#         if account:
-#             msg = 'Account already exists!'
-#         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-#             msg = 'Invalid email address!'
-#         elif not re.match(r'[A-Za-z0-9]+', username):
-#             msg = 'Username must contain only characters and numbers!'
-#         elif not username or not password or not email:
-#             msg = 'Please fill out the form!'
-#         else:
-#             # Account doesnt exists and the form data is valid, now insert new account into accounts table
-#             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
-#             mysql.connection.commit()
-#             msg = 'You have successfully registered!'
-#     elif request.method == 'POST':
-#         # Form is empty... (no POST data)
-#         msg = 'Please fill out the form!'
-#     # Show registration form with message (if any)
-#     return render_template('register.html', msg=msg)
-
+# http://localhost:5000/pythonlogin/register - this will be the registration page, we need to use both GET and POST requests
 @app.route('/pythonlogin/register', methods=['GET', 'POST'])
 def register():
     msg =''
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'confirm_password' in request.form and 'email' in request.form:
-        username = request.form['username']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
-        email = request.form['email']
-        Register_user = Register(username,password,confirm_password,email)
+        Register_user = Register(request.form['username'],request.form['password'],request.form['confirm_password'],request.form['email'])
         validity= Register_user.validate_Info()
         if Register_user.check_ExistingUser():
             msg = 'Account already exists!'
-        elif validity == 'Valid':
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
-            mysql.connection.commit()
-            msg = 'You have successfully registered!'
         elif validity != 'Valid':
             msg = validity
+        elif validity == 'Valid':
+            Register_user.add_User()
+            msg = 'You have successfully registered!'
         elif Register_user.check_Emptyform():
             msg = 'Please fill out the form!'
     return render_template('register.html', msg=msg)
-        
+
+# http://localhost:5000/pythonlogin/home - this will be the home page, only accessible for loggedin users        
 @app.route('/pythonlogin/home', methods=['GET', 'POST'])
 def home():
-    if request.method == 'POST':
-        image = request.files['image']  # get file
-        return redirect(url_for('result', image=image))
-    return render_template('home.html')
+    home_page = Home()
+    if home_page.active_Session():
+        return render_template('home.html', username=session['username'])
+    return redirect(url_for('login'))
 
+# http://localhost:5000/pythonlogin/profile - this will be the profile page, only accessible for loggedin users
+@app.route('/pythonlogin/profile')
+def profile():
+    user_profile = Profile()
+    if 'loggedin' in session: # Check if user is loggedin
+        account = user_profile.user_Info() # We need all the account info for the user so we can display it on the profile page
+        return render_template('profile.html', account=account)# Show the profile page with account info
+    return redirect(url_for('login')) # User is not loggedin redirect to login page
 
 @app.route("/Result", methods=['GET', 'POST'])
 def result():
+    user_result = Result()
     if request.method == 'POST':
-        # Upload file flask
-        uploaded_img = request.files['uploaded-file']
-        # Extracting uploaded data file name
-        img_filename = secure_filename(uploaded_img.filename)
-        # Upload file to database (defined uploaded folder in static path)
-        uploaded_img.save(os.path.join(app.config['UPLOAD_FOLDER'], img_filename))
-        # Storing uploaded file path in flask session
-        session['uploaded_img_file_path'] = os.path.join(app.config['UPLOAD_FOLDER'], img_filename)
-        # Retrieving uploaded file path from session
-        img_file_path = session.get('uploaded_img_file_path', None)
-        # Display image in Flask application web page
-        prediction = model.predict([prepare(img_file_path)])
-        msg = CATEGORIES[int(prediction[0][0])]
-        return render_template('Result.html', user_image = img_file_path,msg = msg)
+        uploaded_image,prediction = user_result.show_Result()
+        return render_template('Result.html', uploaded_image = uploaded_image,prediction = prediction)
 
 if __name__ == "__main__":
     app.run(debug=True)
