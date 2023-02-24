@@ -5,6 +5,14 @@ Webapp interface to Evaluate chest x-ray image for pneumonia using [Trained CNN 
 # Demonstration-:
 https://user-images.githubusercontent.com/99067991/203352471-35cfa2f1-7f26-4922-8a65-7566bd81bc83.mp4
 
+#SOFTWARE REQUIRNMENTS:
+
+1) Visual studio code
+2) python 3.10
+3) flask - `pip install flask`
+4) flask_mysqldb - `pip install flask_mysqldb`
+5) TensorFlow - pip install tensorflow
+
 # How to setup -:
 
 1) clone repository.
