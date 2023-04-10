@@ -12,6 +12,7 @@ https://user-images.githubusercontent.com/99067991/203352471-35cfa2f1-7f26-4922-
 3) flask - `pip install flask`
 4) flask_mysqldb - `pip install flask_mysqldb`
 5) TensorFlow - `pip install tensorflow`
+6) OpenCV - `pip install opencv-python`
 
 # How to setup -:
 
