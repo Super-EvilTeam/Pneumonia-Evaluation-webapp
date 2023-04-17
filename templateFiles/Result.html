@@ -5,12 +5,83 @@
 		<title>Login</title>
 		<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+		<script>
+			$(document).ready(function() {
+        // Add an event listener to the prediction dropdown
+        $("#prediction-form").on("change", "#prediction-dropdown", function() {
+          var selectedOption = $(this).val(); // Get the selected option
+          $.ajax({
+            url: "{{ url_for('get_patterns') }}", // Change this to the URL of your Flask function
+            method: "POST",
+            data: { selected_option: selectedOption },
+            success: function(response) {
+              // Handle the response from the Flask function
+              // For example, you could update the UI with the returned patterns
+            },
+            error: function(xhr, status, error) {
+              console.log(error);
+              alert("An error occurred while processing your request. Please try again later.");
+            }
+          });
+        });
+        $("#prediction-form").submit(function(e) {
+        e.preventDefault(); // prevent the default form submission
+        var image_path = $("input[name=image_path]").val(); // get the image path from the hidden input field
+        $.ajax({
+          url: "{{ url_for('run_prediction') }}",
+          method: "POST",
+          data: { image_path: image_path }, // include the image path in the data to be sent
+          beforeSend: function() {
+            $("#prediction-button").attr("disabled", true);
+            $("#prediction-progress").show();
+          },
+          success: function(response) {
+            $("#prediction-progress").hide();
+            $("#prediction-button").hide();
+            var dropdown = $("<select></select>");
+            dropdown.attr("id", "prediction-dropdown");
+            var defaultOption = $("<option></option>").text("Select patterns").attr("value", "");
+            dropdown.append(defaultOption);
+            for (var i = 1; i <= 5; i++) {
+              var option = $("<option></option>");
+              option.text("Layer " + i);
+              option.attr("value", "option_" + i);
+              dropdown.append(option);
+            }
+            $("#prediction-form").append(dropdown);
+          },
+          error: function(xhr, status, error) {
+            console.log(error);
+            alert("An error occurred while processing your request. Please try again later.");
+            $("#prediction-button").attr("disabled", false);
+            $("#prediction-progress").hide();
+          }
+        });
+      });
+    });
+		</script>
 	</head>
-  <body>
-    <div class="login">
-      <h1>Result</h1>
-      <img src="{{ uploaded_image }}" alt="Italian Trulli" width="400" height="400">
-      <h1 style="color:DodgerBlue;">{{ prediction }}</h1>
-    </div>
-  </body>
+	<body>
+		<div class="login">
+			<h1>Result</h1>
+			<img id="uploaded-image" src="{{ uploaded_image }}" alt="Italian Trulli" width="400" height="400">
+			<div id="prediction-result">
+				{% if prediction == "Normal" %}
+					<h1 style="color:rgb(30, 255, 38);">{{ prediction }}</h1>
+				{% else %}
+					<h1 style="color:rgb(255, 79, 30);">{{ prediction }}</h1>
+				{% endif %}
+			</div>
+			<form id="prediction-form">
+        <input type="hidden" name="image_path" value="{{ uploaded_image }}">
+				<button type="submit" id="prediction-button">Run Prediction</button>
+				<div id="prediction-progress" style="display:none;">
+          <p style="font-size: 20px;">Please wait while we process your request...</p>
+          <div class="progress-bar"></div>
+        </div>
+				</div>
+			</form>
+		</div>
+	</body>
 </html>

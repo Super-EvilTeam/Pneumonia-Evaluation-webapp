@@ -1,12 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify,Response
+from threading import Thread
 from werkzeug.utils import secure_filename
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import cv2
 import tensorflow as tf
+import matplotlib.pyplot as plt
 import re
 import os
-
+import math
+from zipfile import ZipFile
 
 class Login:
     def __init__(self,username,password):
@@ -113,10 +116,47 @@ class Result():
         CATEGORIES = ['Affected','Normal']
         msg = CATEGORIES[int(prediction[0][0])]
         return img_file_path,msg
+
+class patterns():
+    def __init__(self):
+        pass
     
+
+    def show_pattern(self,layer_num):
+        start = (layer_num-1)*18  # Calculate the starting index of images to display
+        end = start + 18  # Calculate the ending index of images to display
+        folder_path = 'D:\Sumit\BE_Final_Year_Project\Pneumonia-Evaluation-webapp-main\plots'
+        files = os.listdir(folder_path)  # Get the list of files in the folder
+        
+        # Calculate the number of rows and columns in the subplot grid
+        num_cols = 6
+        num_rows = math.ceil((end - start) / num_cols)
+        
+        # Create the subplot grid
+        fig, axes = plt.subplots(num_rows, num_cols, figsize=(10,10))
+        
+        # Iterate over the files and plot the images in the subplot grid
+        for i in range(start, end):
+            if i >= len(files):  # Break the loop if all images have been displayed
+                break
+            img_path = os.path.join(folder_path, files[i])
+            img = plt.imread(img_path)
+            row = (i - start) // num_cols
+            col = (i - start) % num_cols
+            axes[row, col].imshow(img)
+            axes[row, col].axis('off')
+        
+        plt.subplots_adjust(wspace=0, hspace=0)  # Remove the spacing between the subplots
+        print('done')
+        # plt.show()
+
+
+
+
 app = Flask(__name__, template_folder='templateFiles', static_folder='staticFiles')
 app.secret_key = '2c20aa641c0c82029850dec9c8213d46807f6e8e6d9a9ee90e7516a2345ee055'
 app.config['UPLOAD_FOLDER'] = os.path.join('staticFiles', 'uploads')
+app.config['PATTERNS'] = os.path.join('staticFiles', 'plots')
 #database connection details below
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -125,7 +165,7 @@ app.config['MYSQL_DB'] = 'pythonlogin'
 
 
 mysql = MySQL(app)# Intialize MySQL
-model = tf.keras.models.load_model('E:\project final year\pneumonia\code\main_code\p1.h5')# Load model
+model = tf.keras.models.load_model('staticFiles\Trained models\p1.h5')# Load model
 
 #http://localhost:5000/ - this will be login page, which will use both GET and POST requests
 @app.route('/', methods=['GET', 'POST'])
@@ -188,6 +228,80 @@ def result():
     if request.method == 'POST':
         uploaded_image,prediction = user_result.show_Result()
         return render_template('Result.html', uploaded_image = uploaded_image,prediction = prediction)
+
+@app.route('/run-prediction', methods=['POST'])
+def run_prediction():
+    image_path = request.form['image_path'] # get the image path from the request data
+  # perform the prediction using the image path
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
+
+    # Load an image
+    image = cv2.imread(image_path , cv2.IMREAD_GRAYSCALE)
+
+    # Resize the image to (224, 224) and add a channel dimension
+    input_image = cv2.resize(image, (224, 224)).reshape(-1, 224, 224, 1)
+
+    # Get the output activations for all layers in the model
+    layer_outputs = [layer.output for layer in model.layers]
+
+    # Create a new model that takes the input image and outputs the activations for all layers
+    activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
+
+    # Get the activations for all layers for the input image
+    activations = activation_model.predict(input_image)
+
+    # Specify the filters to visualize in each layer
+    layer_filters = {
+        0: [1, 5, 7, 10, 11, 13, 15, 16, 17, 20, 21, 22, 23, 24, 25, 36, 43, 62],
+        1: [1, 5, 7, 10, 11, 13, 15, 16, 17, 20, 21, 22, 23, 24, 25, 36, 43, 62],
+        2: [1, 5, 7, 10, 11, 13, 15, 16, 17, 20, 21, 22, 23, 24, 25, 36, 43, 62],
+        3: [1, 5, 7, 10, 11, 13, 15, 16, 17, 20, 21, 22, 23, 24, 25, 36, 43, 62],
+        4: [1, 5, 7, 10, 11, 13, 15, 16, 17, 20, 21, 22, 23, 24, 25, 36, 43, 62],
+        5: [1, 5, 7, 10, 11, 13, 15, 16, 17, 20, 21, 22, 23, 24, 25, 36, 43, 62]
+    }
+
+    # Loop over the layers and filters to visualize and plot the activations as heatmaps
+    for layer_index, filters in layer_filters.items():
+        layer_activations = activations[layer_index]
+        for filter_index in filters:
+            activations_for_filter = layer_activations[:, :, :, filter_index]
+            plt.matshow(activations_for_filter[0, :, :], cmap='viridis')
+            plt.savefig(f'plots/layer{layer_index}_filter{filter_index}.png')
+            plt.close()
+    # return the HTML as a response
+    return 'success'
+    
+@app.route('/get_patterns', methods=['POST'])
+def get_patterns():
+    selected_option = request.form['selected_option']
+    layer_num = int(selected_option.split('_')[1])
+    print(layer_num)
+
+    obj = patterns()
+    def run_show_pattern():
+        obj.show_pattern(layer_num)
+
+    # Create a new thread and start it
+    thread = Thread(target=run_show_pattern)
+    thread.start()
+
+    return 'success'
+
+    # Use the layer number to get the appropriate patterns
+    # if layer_num == 1:
+    #     patterns = get_patterns_from_layer_0()
+    # elif layer_num == 2:
+    #     patterns = get_patterns_from_layer_1()
+    # elif layer_num == 3:
+    #     patterns = get_patterns_from_layer_2()
+    # elif layer_num == 4:
+    #     patterns = get_patterns_from_layer_3()
+    # elif layer_num == 5:
+    #     patterns = get_patterns_from_layer_4()
+    # else:
+    #     patterns = []
+    # return jsonify(patterns)
 
 if __name__ == "__main__":
     app.run(debug=True)
