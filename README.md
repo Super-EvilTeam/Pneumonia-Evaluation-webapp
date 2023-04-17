@@ -9,10 +9,13 @@ https://user-images.githubusercontent.com/99067991/203352471-35cfa2f1-7f26-4922-
 
 1) Visual studio code
 2) python 3.10
-3) flask - `pip install flask`
-4) flask_mysqldb - `pip install flask_mysqldb`
-5) TensorFlow - `pip install tensorflow==2.10`
-6) OpenCV - `pip install opencv-python`
+
+# LIBRARY REQUIRNMENTS:
+1) flask - `pip install flask`
+2) flask_mysqldb - `pip install flask_mysqldb`
+3) TensorFlow - `pip install tensorflow==2.10`
+4) OpenCV - `pip install opencv-python`
+5) Matplotlib - `pip install matplotlib`
 
 # How to setup -:
 
